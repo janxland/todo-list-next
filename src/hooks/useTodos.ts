@@ -20,12 +20,12 @@ export const useTodos = () => {
     }
   }
 
-  const addTodo = async (title: string, description?: string, categoryId?: string) => {
+  const addTodo = async (title: string, description?: string, categoryId?: string, dueDate?: Date) => {
     try {
       const response = await fetch('/api/todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, categoryId }),
+        body: JSON.stringify({ title, description, categoryId, dueDate }),
       })
       if (!response.ok) throw new Error('添加任务失败')
       const newTodo = await response.json()

@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, priority, categoryId } = body
+    const { title, description, priority, categoryId, dueDate } = body
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -81,12 +81,32 @@ export async function POST(request: NextRequest) {
     })
     const newOrder = (maxOrder._max.order || 0) + 1
 
+    // Parse dueDate if provided
+    let parsedDueDate = null
+    if (dueDate) {
+      try {
+        parsedDueDate = new Date(dueDate)
+        if (isNaN(parsedDueDate.getTime())) {
+          return NextResponse.json(
+            { error: 'Invalid due date format' },
+            { status: 400 }
+          )
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Invalid due date format' },
+          { status: 400 }
+        )
+      }
+    }
+
     const todo = await prisma.todo.create({
       data: {
         title,
         description: description || null,
         priority: priority || 'MEDIUM',
         categoryId: categoryId || null,
+        dueDate: parsedDueDate,
         order: newOrder
       },
       include: {

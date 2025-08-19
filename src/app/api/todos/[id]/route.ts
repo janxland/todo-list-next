@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { title, description, completed, order, categoryId } = body
+    const { title, description, completed, order, categoryId, dueDate } = body
 
     console.log('Received update request:', { id: params.id, body })
     console.log('Original categoryId:', categoryId, 'Type:', typeof categoryId)
@@ -16,12 +16,36 @@ export async function PUT(
     const processedCategoryId = categoryId === '' ? null : categoryId
     console.log('Processed categoryId:', processedCategoryId)
 
+    // 处理 dueDate
+    let processedDueDate = undefined
+    if (dueDate !== undefined) {
+      if (dueDate === null || dueDate === '') {
+        processedDueDate = null
+      } else {
+        try {
+          processedDueDate = new Date(dueDate)
+          if (isNaN(processedDueDate.getTime())) {
+            return NextResponse.json(
+              { error: 'Invalid due date format' },
+              { status: 400 }
+            )
+          }
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Invalid due date format' },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     const updateData = {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
       ...(completed !== undefined && { completed }),
       ...(order !== undefined && { order }),
-      ...(categoryId !== undefined && { categoryId: processedCategoryId })
+      ...(categoryId !== undefined && { categoryId: processedCategoryId }),
+      ...(dueDate !== undefined && { dueDate: processedDueDate })
     }
 
     console.log('Update data:', updateData)

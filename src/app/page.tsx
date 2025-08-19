@@ -42,6 +42,74 @@ export default function Home() {
           <AddTodoForm onAdd={addTodo} />
         </div>
 
+        {/* 截止时间提醒 */}
+        {(() => {
+          const now = new Date()
+          const overdueTodos = todos.filter(todo => 
+            !todo.completed && 
+            todo.dueDate && 
+            new Date(todo.dueDate) < now
+          )
+          const todayTodos = todos.filter(todo => {
+            if (!todo.dueDate || todo.completed) return false
+            const dueDate = new Date(todo.dueDate)
+            const today = new Date()
+            return dueDate.toDateString() === today.toDateString()
+          })
+
+          if (overdueTodos.length === 0 && todayTodos.length === 0) return null
+
+          return (
+            <div className="mb-6 animate-fade-in-up">
+              {overdueTodos.length > 0 && (
+                <div className="instagram-card rounded-2xl p-4 mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <h3 className="font-semibold text-red-800 dark:text-red-200">
+                      已过期任务 ({overdueTodos.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-1">
+                    {overdueTodos.slice(0, 3).map(todo => (
+                      <div key={todo.id} className="text-sm text-red-600 dark:text-red-300">
+                        • {todo.title}
+                      </div>
+                    ))}
+                    {overdueTodos.length > 3 && (
+                      <div className="text-sm text-red-600 dark:text-red-300">
+                        ...还有 {overdueTodos.length - 3} 个任务
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {todayTodos.length > 0 && (
+                <div className="instagram-card rounded-2xl p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <h3 className="font-semibold text-orange-800 dark:text-orange-200">
+                      今天到期任务 ({todayTodos.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-1">
+                    {todayTodos.slice(0, 3).map(todo => (
+                      <div key={todo.id} className="text-sm text-orange-600 dark:text-orange-300">
+                        • {todo.title}
+                      </div>
+                    ))}
+                    {todayTodos.length > 3 && (
+                      <div className="text-sm text-orange-600 dark:text-orange-300">
+                        ...还有 {todayTodos.length - 3} 个任务
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {/* 视图切换和分类筛选 */}
         <div className="instagram-card rounded-2xl p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -131,16 +199,16 @@ export default function Home() {
                   <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">拖拽模式已启用</h3>
                   <div className="space-y-2 text-sm text-blue-600 dark:text-blue-300">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <span>拖拽到任务顶部：插入到该任务前面</span>
+                      <div className="w-3 h-1 bg-purple-500 rounded-full"></div>
+                      <span><strong>顶部区域</strong>：插入到目标任务前面</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <span>拖拽到任务中间：与该任务交换位置</span>
+                      <div className="w-3 h-3 border-2 border-purple-500 rounded"></div>
+                      <span><strong>中间区域</strong>：与目标任务交换位置</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <span>拖拽到任务底部：插入到该任务后面</span>
+                      <div className="w-3 h-1 bg-purple-500 rounded-full"></div>
+                      <span><strong>底部区域</strong>：插入到目标任务后面</span>
                     </div>
                   </div>
                 </div>

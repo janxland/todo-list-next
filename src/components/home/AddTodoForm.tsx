@@ -6,7 +6,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { cn } from '@/lib/utils'
 
 interface AddTodoFormProps {
-  onAdd: (title: string, description?: string, categoryId?: string) => void
+  onAdd: (title: string, description?: string, categoryId?: string, dueDate?: Date) => void
 }
 
 export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
@@ -14,6 +14,7 @@ export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
+  const [dueDate, setDueDate] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -23,10 +24,12 @@ export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
 
     setIsSubmitting(true)
     try {
-      await onAdd(title.trim(), description.trim() || undefined, categoryId || undefined)
+      const parsedDueDate = dueDate ? new Date(dueDate) : undefined
+      await onAdd(title.trim(), description.trim() || undefined, categoryId || undefined, parsedDueDate)
       setTitle('')
       setDescription('')
       setCategoryId('')
+      setDueDate('')
       setIsExpanded(false)
     } finally {
       setIsSubmitting(false)
@@ -89,6 +92,20 @@ export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
                 ))}
               </select>
             </div>
+
+            {/* 截止时间 */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                截止时间（可选）
+              </label>
+              <input
+                type="datetime-local"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="instagram-input w-full"
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
         )}
 
@@ -119,6 +136,7 @@ export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
                 setTitle('')
                 setDescription('')
                 setCategoryId('')
+                setDueDate('')
               }}
               className="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-150"
             >

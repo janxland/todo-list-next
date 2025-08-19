@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Todo } from '@/types/todo'
 import { cn } from '@/lib/utils'
-import { Check, Edit, Trash2, X, Save, Calendar, GripVertical } from 'lucide-react'
+import { Check, Edit, Trash2, X, Save, Calendar, GripVertical, Clock, AlertTriangle } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 
 interface TodoItemProps {
@@ -19,6 +19,7 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
   const [editTitle, setEditTitle] = useState(todo.title)
   const [editDescription, setEditDescription] = useState(todo.description || '')
   const [editCategoryId, setEditCategoryId] = useState(todo.categoryId || '')
+  const [editDueDate, setEditDueDate] = useState(todo.dueDate ? new Date(todo.dueDate).toISOString().slice(0, 16) : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleToggleComplete = async () => {
@@ -37,7 +38,8 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
       const updateData = {
         title: editTitle.trim(),
         description: editDescription.trim() || null,
-        categoryId: editCategoryId || null
+        categoryId: editCategoryId || null,
+        dueDate: editDueDate ? new Date(editDueDate) : null
       }
       
       console.log('Sending update data:', updateData)
@@ -56,6 +58,7 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
     setEditTitle(todo.title)
     setEditDescription(todo.description || '')
     setEditCategoryId(todo.categoryId || '')
+    setEditDueDate(todo.dueDate ? new Date(todo.dueDate).toISOString().slice(0, 16) : '')
     setIsEditing(false)
   }
 
@@ -90,6 +93,48 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
         return 'bg-green-500'
       default:
         return 'bg-gray-500'
+    }
+  }
+
+  const getDueDateStatus = (dueDate: Date | null) => {
+    if (!dueDate) return null
+    
+    const now = new Date()
+    const due = new Date(dueDate)
+    const diffInDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays < 0) {
+      return { status: 'overdue', text: '已过期', color: 'text-red-600', bgColor: 'bg-red-50', icon: AlertTriangle }
+    } else if (diffInDays === 0) {
+      return { status: 'today', text: '今天到期', color: 'text-orange-600', bgColor: 'bg-orange-50', icon: Clock }
+    } else if (diffInDays === 1) {
+      return { status: 'tomorrow', text: '明天到期', color: 'text-yellow-600', bgColor: 'bg-yellow-50', icon: Clock }
+    } else if (diffInDays <= 7) {
+      return { status: 'soon', text: `${diffInDays}天后到期`, color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Clock }
+    } else {
+      return { status: 'future', text: `${diffInDays}天后到期`, color: 'text-gray-600', bgColor: 'bg-gray-50', icon: Clock }
+    }
+  }
+
+  const formatDueDate = (dueDate: Date | null) => {
+    if (!dueDate) return ''
+    
+    const date = new Date(dueDate)
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const dueDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    if (dueDateOnly.getTime() === today.getTime()) {
+      return `今天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+    } else if (dueDateOnly.getTime() === today.getTime() + 86400000) {
+      return `明天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+    } else {
+      return date.toLocaleDateString('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
   }
 
@@ -133,6 +178,19 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* 截止时间 */}
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                截止时间（可选）
+              </label>
+              <input
+                type="datetime-local"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                className="instagram-input w-full"
+              />
             </div>
           </div>
           
@@ -227,6 +285,28 @@ export const TodoItem = ({ todo, onUpdate, onDelete, isDraggable = false }: Todo
                       </div>
                     )}
                   </div>
+
+                  {/* 截止时间显示 */}
+                  {todo.dueDate && (
+                    <div className="mt-3">
+                      {(() => {
+                        const dueDateStatus = getDueDateStatus(todo.dueDate)
+                        if (!dueDateStatus) return null
+                        const IconComponent = dueDateStatus.icon
+                        return (
+                          <div className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium",
+                            dueDateStatus.bgColor,
+                            dueDateStatus.color
+                          )}>
+                            <IconComponent size={14} />
+                            <span>{formatDueDate(todo.dueDate)}</span>
+                            <span>({dueDateStatus.text})</span>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">

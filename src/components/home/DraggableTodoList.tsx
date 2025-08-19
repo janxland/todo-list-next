@@ -28,26 +28,35 @@ export const DraggableTodoList = ({
 
   const handleDragStart = (e: React.DragEvent, todoId: string) => {
     console.log('Drag start:', todoId)
+    
+    // 立即设置拖拽状态
     setIsDragging(true)
     setDragError(null)
     setDraggedId(todoId)
     setDropPosition(null)
+    
+    // 设置拖拽数据
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', todoId)
     
-    // 使用简单的拖拽图像，避免DOM操作影响
-    const canvas = document.createElement('canvas')
-    canvas.width = 200
-    canvas.height = 40
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      ctx.fillStyle = '#8b5cf6'
-      ctx.fillRect(0, 0, 200, 40)
-      ctx.fillStyle = 'white'
-      ctx.font = '14px Arial'
-      ctx.fillText('📝 拖拽中...', 10, 25)
+    // 创建拖拽图像
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = 200
+      canvas.height = 40
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.fillStyle = '#8b5cf6'
+        ctx.fillRect(0, 0, 200, 40)
+        ctx.fillStyle = 'white'
+        ctx.font = '14px Arial'
+        ctx.fillText('📝 拖拽中...', 10, 25)
+      }
+      e.dataTransfer.setDragImage(canvas, 100, 20)
+    } catch (error) {
+      console.warn('Failed to create drag image:', error)
+      // 如果创建拖拽图像失败，使用默认的
     }
-    e.dataTransfer.setDragImage(canvas, 100, 20)
   }
 
   const handleDragOver = (e: React.DragEvent, todoId: string) => {
@@ -115,48 +124,59 @@ export const DraggableTodoList = ({
     console.log(`Dropping ${draggedTodoId} ${effectiveDropPosition} ${targetTodoId}`)
 
     try {
-      // 获取筛选后的任务列表
-      const filteredTodos = todos.filter(todo => selectedCategory === null || todo.categoryId === selectedCategory)
-      
-      // 找到拖拽的源任务和目标任务
-      const draggedIndex = filteredTodos.findIndex(todo => todo.id === draggedTodoId)
-      const targetIndex = filteredTodos.findIndex(todo => todo.id === targetTodoId)
+      // 找到要移动的任务和目标任务的索引
+      const draggedIndex = todos.findIndex(todo => todo.id === draggedTodoId)
+      const targetIndex = todos.findIndex(todo => todo.id === targetTodoId)
       
       if (draggedIndex === -1 || targetIndex === -1) {
-        console.log('Could not find todos in filtered list')
+        console.log('Could not find todos in list')
         setDragError('无法找到要移动的任务')
         return
       }
 
-      console.log(`Moving from index ${draggedIndex} to ${targetIndex}`)
+      console.log(`Moving from index ${draggedIndex} to ${targetIndex}, position: ${effectiveDropPosition}`)
 
-      // 创建新的排序
+      // 创建新的排序数组
       const newTodos = [...todos]
       
-      // 找到要移动的任务
-      const draggedTodoFullIndex = newTodos.findIndex(todo => todo.id === draggedTodoId)
-      const targetTodoFullIndex = newTodos.findIndex(todo => todo.id === targetTodoId)
+      // 计算最终的插入位置
+      let finalInsertIndex: number
       
-      if (draggedTodoFullIndex === -1 || targetTodoFullIndex === -1) {
-        console.log('Could not find todos in full list')
-        setDragError('无法找到要移动的任务')
+      if (effectiveDropPosition === 'before') {
+        // 插入到目标位置之前
+        finalInsertIndex = targetIndex
+      } else if (effectiveDropPosition === 'after') {
+        // 插入到目标位置之后
+        finalInsertIndex = targetIndex + 1
+      } else if (effectiveDropPosition === 'swap') {
+        // 交换位置：直接交换两个元素
+        [newTodos[draggedIndex], newTodos[targetIndex]] = [newTodos[targetIndex], newTodos[draggedIndex]]
+        
+        console.log('Swapped positions:', newTodos.map((t, i) => ({ index: i, id: t.id, title: t.title })))
+
+        // 乐观更新本地状态
+        setTodos(newTodos)
+
+        // 批量更新数据库顺序
+        console.log('Updating database order...')
+        const updatePromises = newTodos.map((todo, index) => 
+          onUpdate(todo.id, { order: index + 1 })
+        )
+        
+        await Promise.all(updatePromises)
+        console.log('Database order updated successfully')
+        return
+      } else {
+        console.error('Unknown drop position:', effectiveDropPosition)
         return
       }
       
-      // 移除被拖拽的任务
-      const [draggedTodo] = newTodos.splice(draggedTodoFullIndex, 1)
+      // 对于 before 和 after 操作，移除原元素并插入到新位置
+      const [draggedTodo] = newTodos.splice(draggedIndex, 1)
       
-      // 重新计算目标位置（因为可能有元素被移除了）
-      const newTargetIndex = newTodos.findIndex(todo => todo.id === targetTodoId)
-      
-      // 计算最终插入位置
-      let finalInsertIndex = newTargetIndex
-      if (effectiveDropPosition === 'before') {
-        finalInsertIndex = newTargetIndex
-      } else if (effectiveDropPosition === 'after') {
-        finalInsertIndex = newTargetIndex + 1
-      } else if (effectiveDropPosition === 'swap') {
-        finalInsertIndex = newTargetIndex
+      // 如果移除的元素在插入位置之前，需要调整插入位置
+      if (draggedIndex < finalInsertIndex) {
+        finalInsertIndex -= 1
       }
       
       // 确保插入位置在有效范围内
@@ -190,6 +210,7 @@ export const DraggableTodoList = ({
   }
 
   const handleDragEnd = () => {
+    console.log('Drag end - cleaning up state')
     setIsDragging(false)
     setDragOverId(null)
     setDraggedId(null)
@@ -224,10 +245,13 @@ export const DraggableTodoList = ({
             onDragEnd={handleDragEnd}
             className={cn(
               "transition-all duration-300 ease-in-out relative cursor-move",
-              draggedId === todo.id && "opacity-30 scale-95 rotate-1 shadow-lg",
+              draggedId === todo.id && "opacity-30 scale-95 rotate-1 shadow-lg z-10",
               dragOverId === todo.id && draggedId !== todo.id && "bg-purple-50 dark:bg-purple-900/20 border-2 border-dashed border-purple-400 rounded-2xl"
             )}
-            style={{ touchAction: 'none' }} // 防止移动端滚动干扰
+            style={{ 
+              touchAction: 'none',
+              userSelect: 'none'
+            }}
           >
             {/* 拖拽位置指示器 */}
             {dragOverId === todo.id && draggedId !== todo.id && (

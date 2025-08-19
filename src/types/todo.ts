@@ -5,6 +5,7 @@ export interface Todo {
   completed: boolean
   priority: Priority
   order: number
+  dueDate?: Date | null
   createdAt: Date
   updatedAt: Date
   categoryId?: string | null
@@ -25,6 +26,7 @@ export interface CreateTodoData {
   description?: string
   priority?: Priority
   categoryId?: string
+  dueDate?: Date
 }
 
 export interface UpdateTodoData {
@@ -34,6 +36,7 @@ export interface UpdateTodoData {
   priority?: Priority
   categoryId?: string
   order?: number
+  dueDate?: Date | null
 }
 
 export interface CreateCategoryData {

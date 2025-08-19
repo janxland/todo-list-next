@@ -8,7 +8,6 @@ export const LoadingSpinner = () => {
         
         <div className="text-center">
           <p className="text-gray-800 text-lg font-medium mb-2">加载中</p>
-          <p className="text-gray-500 text-sm loading-dots">请稍候</p>
         </div>
         
         <div className="flex space-x-2">
