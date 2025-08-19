@@ -6,81 +6,81 @@ settings:
 
 dependencies:
   '@prisma/client':
-    specifier: ^5.7.1
+    specifier: ^5.22.0
     version: 5.22.0(prisma@5.22.0)
   '@types/node':
-    specifier: ^20.10.0
+    specifier: ^20.19.11
     version: 20.19.11
   '@types/react':
-    specifier: ^18.2.45
+    specifier: ^18.3.23
     version: 18.3.23
   '@types/react-beautiful-dnd':
     specifier: ^13.1.8
     version: 13.1.8
   '@types/react-dom':
-    specifier: ^18.2.18
+    specifier: ^18.3.7
     version: 18.3.7(@types/react@18.3.23)
   autoprefixer:
-    specifier: ^10.4.16
+    specifier: ^10.4.21
     version: 10.4.21(postcss@8.5.6)
   clsx:
-    specifier: ^2.0.0
+    specifier: ^2.1.1
     version: 2.1.1
   eslint:
-    specifier: ^8.56.0
+    specifier: ^8.57.1
     version: 8.57.1
   eslint-config-next:
-    specifier: ^14.0.4
+    specifier: ^14.2.32
     version: 14.2.32(eslint@8.57.1)(typescript@5.9.2)
   lucide-react:
     specifier: ^0.294.0
     version: 0.294.0(react@18.3.1)
   next:
-    specifier: ^14.0.4
+    specifier: ^14.2.32
     version: 14.2.32(react-dom@18.3.1)(react@18.3.1)
   next-themes:
     specifier: ^0.2.1
     version: 0.2.1(next@14.2.32)(react-dom@18.3.1)(react@18.3.1)
   papaparse:
-    specifier: ^5.4.1
+    specifier: ^5.5.3
     version: 5.5.3
   postcss:
-    specifier: ^8.4.32
+    specifier: ^8.5.6
     version: 8.5.6
   react:
-    specifier: ^18.2.0
+    specifier: ^18.3.1
     version: 18.3.1
   react-beautiful-dnd:
     specifier: ^13.1.1
     version: 13.1.1(react-dom@18.3.1)(react@18.3.1)
   react-dom:
-    specifier: ^18.2.0
+    specifier: ^18.3.1
     version: 18.3.1(react@18.3.1)
   react-dropzone:
-    specifier: ^14.2.3
+    specifier: ^14.3.8
     version: 14.3.8(react@18.3.1)
   react-hot-toast:
-    specifier: ^2.4.1
+    specifier: ^2.6.0
     version: 2.6.0(react-dom@18.3.1)(react@18.3.1)
   recharts:
-    specifier: ^2.8.0
+    specifier: ^2.15.4
     version: 2.15.4(react-dom@18.3.1)(react@18.3.1)
   tailwind-merge:
-    specifier: ^2.2.0
+    specifier: ^2.6.0
     version: 2.6.0
   tailwindcss:
-    specifier: ^3.4.0
+    specifier: ^3.4.17
     version: 3.4.17
   typescript:
-    specifier: ^5.3.3
+    specifier: ^5.9.2
     version: 5.9.2
   use-debounce:
-    specifier: ^10.0.0
+    specifier: ^10.0.5
     version: 10.0.5(react@18.3.1)
 
 devDependencies:
   prisma:
-    specifier: ^5.7.1
+    specifier: ^5.22.0
     version: 5.22.0
 
 packages:
