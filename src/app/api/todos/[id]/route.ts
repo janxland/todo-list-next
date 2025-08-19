@@ -7,16 +7,34 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { title, description, completed } = body
+    const { title, description, completed, order, categoryId } = body
+
+    console.log('Received update request:', { id: params.id, body })
+    console.log('Original categoryId:', categoryId, 'Type:', typeof categoryId)
+
+    // 处理 categoryId：空字符串转换为 null
+    const processedCategoryId = categoryId === '' ? null : categoryId
+    console.log('Processed categoryId:', processedCategoryId)
+
+    const updateData = {
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(completed !== undefined && { completed }),
+      ...(order !== undefined && { order }),
+      ...(categoryId !== undefined && { categoryId: processedCategoryId })
+    }
+
+    console.log('Update data:', updateData)
 
     const todo = await prisma.todo.update({
       where: { id: params.id },
-      data: {
-        title,
-        description,
-        completed
+      data: updateData,
+      include: {
+        category: true
       }
     })
+
+    console.log('Updated todo:', todo)
 
     return NextResponse.json(todo)
   } catch (error) {

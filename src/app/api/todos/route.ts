@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId')
     const priority = searchParams.get('priority')
     const completed = searchParams.get('completed')
-    const sortBy = searchParams.get('sortBy') || 'createdAt'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
+    const sortBy = searchParams.get('sortBy') || 'order'
+    const sortOrder = searchParams.get('sortOrder') || 'asc'
 
     // Build query conditions
     const where: any = {}

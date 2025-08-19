@@ -1,189 +1,161 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Todo } from '@/types/todo'
-import TodoItem from '@/components/TodoItem'
-import AddTodo from '@/components/AddTodo'
-import LoadingSpinner from '@/components/LoadingSpinner'
-import EmptyState from '@/components/EmptyState'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { useTodos } from '@/hooks/useTodos'
+import { useCategories } from '@/hooks/useCategories'
+import { Navigation } from '@/components/ui/Navigation'
+import { AddTodoForm } from '@/components/home/AddTodoForm'
+import { TodoList } from '@/components/home/TodoList'
+import { DraggableTodoList } from '@/components/home/DraggableTodoList'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Move, List } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function Home() {
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // 获取所有任务
-  const fetchTodos = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/todos')
-      if (!response.ok) {
-        throw new Error('获取任务失败')
-      }
-      const data = await response.json()
-      setTodos(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '未知错误')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 添加任务
-  const handleAddTodo = async (title: string, description?: string) => {
-    try {
-      const response = await fetch('/api/todos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title, description }),
-      })
-
-      if (!response.ok) {
-        throw new Error('添加任务失败')
-      }
-
-      const newTodo = await response.json()
-      setTodos(prev => [newTodo, ...prev])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '添加任务失败')
-    }
-  }
-
-  // 更新任务
-  const handleUpdateTodo = async (id: string, data: Partial<Todo>) => {
-    try {
-      const response = await fetch(`/api/todos/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        throw new Error('更新任务失败')
-      }
-
-      const updatedTodo = await response.json()
-      setTodos(prev => prev.map(todo => 
-        todo.id === id ? updatedTodo : todo
-      ))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '更新任务失败')
-    }
-  }
-
-  // 删除任务
-  const handleDeleteTodo = async (id: string) => {
-    try {
-      const response = await fetch(`/api/todos/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('删除任务失败')
-      }
-
-      setTodos(prev => prev.filter(todo => todo.id !== id))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '删除任务失败')
-    }
-  }
-
-  useEffect(() => {
-    fetchTodos()
-  }, [])
-
-  const completedCount = todos.filter(todo => todo.completed).length
-  const totalCount = todos.length
+  const { todos, loading, error, addTodo, updateTodo, deleteTodo, setTodos } = useTodos()
+  const { categories } = useCategories()
+  const [viewMode, setViewMode] = useState<'list' | 'drag'>('list')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <LoadingSpinner />
-        </div>
+      <div className="min-h-screen instagram-light flex items-center justify-center">
+        <LoadingSpinner />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 头部 */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            待办事项清单
-          </h1>
-          <p className="text-gray-600">
-            管理您的任务，提高工作效率
-          </p>
-        </div>
-
-        {/* 统计信息 */}
-        {totalCount > 0 && (
-          <div className="bg-white rounded-lg p-4 mb-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="text-green-500" size={20} />
-                  <span className="text-sm text-gray-600">
-                    已完成: {completedCount}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="text-blue-500" size={20} />
-                  <span className="text-sm text-gray-600">
-                    总计: {totalCount}
-                  </span>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                完成率: {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen instagram-light">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <Navigation />
 
         {/* 错误提示 */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="text-red-500" size={20} />
-              <span className="text-red-700">{error}</span>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="mt-2 text-sm text-red-600 hover:text-red-800"
-            >
-              关闭
-            </button>
+          <div className="instagram-card rounded-2xl p-4 mb-6 animate-fade-in-up" style={{ border: '1px solid var(--border-error)' }}>
+            <p className="text-center" style={{ color: '#dc2626' }}>{error}</p>
           </div>
         )}
 
         {/* 添加任务 */}
-        <div className="mb-6">
-          <AddTodo onAdd={handleAddTodo} />
+        <div className="mb-8 animate-fade-in-up">
+          <AddTodoForm onAdd={addTodo} />
+        </div>
+
+        {/* 视图切换和分类筛选 */}
+        <div className="instagram-card rounded-2xl p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>任务管理</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-100",
+                  viewMode === 'list'
+                    ? "instagram-button text-white"
+                    : "hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                )}
+                style={{ color: viewMode === 'list' ? 'white' : 'var(--text-secondary)' }}
+              >
+                <List size={16} />
+                <span>列表模式</span>
+              </button>
+              <button
+                onClick={() => setViewMode('drag')}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-100",
+                  viewMode === 'drag'
+                    ? "instagram-button text-white"
+                    : "hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                )}
+                style={{ color: viewMode === 'drag' ? 'white' : 'var(--text-secondary)' }}
+              >
+                <Move size={16} />
+                <span>拖拽模式</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 分类筛选 */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>分类筛选:</span>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={cn(
+                "px-3 py-1 rounded-lg text-sm transition-all duration-100",
+                selectedCategory === null
+                  ? "instagram-button text-white"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
+              style={{ color: selectedCategory === null ? 'white' : 'var(--text-secondary)' }}
+            >
+              全部
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-sm transition-all duration-100 flex items-center gap-2",
+                  selectedCategory === category.id
+                    ? "text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+                style={{ 
+                  color: selectedCategory === category.id ? 'white' : 'var(--text-secondary)',
+                  background: selectedCategory === category.id ? category.color : 'transparent'
+                }}
+              >
+                <div className={cn("w-2 h-2 rounded-full", category.color)}></div>
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 任务列表 */}
-        <div className="space-y-4">
-          {todos.length === 0 ? (
-            <EmptyState />
-          ) : (
-            todos.map(todo => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onUpdate={handleUpdateTodo}
-                onDelete={handleDeleteTodo}
-              />
-            ))
-          )}
-        </div>
+        {viewMode === 'list' ? (
+          <TodoList
+            todos={todos}
+            selectedCategory={selectedCategory}
+            onUpdate={updateTodo}
+            onDelete={deleteTodo}
+          />
+        ) : (
+          <div className="space-y-4">
+            {/* 拖拽模式提示 */}
+            <div className="instagram-card rounded-2xl p-4 mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <Move size={20} className="text-blue-600 mt-1" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">拖拽模式已启用</h3>
+                  <div className="space-y-2 text-sm text-blue-600 dark:text-blue-300">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span>拖拽到任务顶部：插入到该任务前面</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span>拖拽到任务中间：与该任务交换位置</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span>拖拽到任务底部：插入到该任务后面</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <DraggableTodoList
+              todos={todos}
+              selectedCategory={selectedCategory}
+              onUpdate={updateTodo}
+              onDelete={deleteTodo}
+              setTodos={setTodos}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

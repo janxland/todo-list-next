@@ -24,34 +24,59 @@ export async function GET() {
       _count: { categoryId: true }
     })
 
-    // 本周趋势
-    const startOfWeek = new Date()
-    startOfWeek.setDate(startOfWeek.getDate() - 7)
-    
-    const weeklyTrend = await prisma.todo.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: startOfWeek
-        }
-      },
-      _count: { createdAt: true }
-    })
+    // 生成本周趋势数据（最近7天）
+    const weekStart = new Date()
+    weekStart.setDate(weekStart.getDate() - 6)
+    weekStart.setHours(0, 0, 0, 0)
 
-    // 本月趋势
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-    
-    const monthlyTrend = await prisma.todo.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: startOfMonth
+    const weeklyTrend = []
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart)
+      date.setDate(date.getDate() + i)
+      
+      const nextDate = new Date(date)
+      nextDate.setDate(nextDate.getDate() + 1)
+      
+      const count = await prisma.todo.count({
+        where: {
+          createdAt: {
+            gte: date,
+            lt: nextDate
+          }
         }
-      },
-      _count: { createdAt: true }
-    })
+      })
+      
+      weeklyTrend.push({
+        date: date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }),
+        count
+      })
+    }
+
+    // 生成本月趋势数据（最近12个月）
+    const monthlyTrend = []
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      date.setDate(1)
+      date.setHours(0, 0, 0, 0)
+      
+      const nextDate = new Date(date)
+      nextDate.setMonth(nextDate.getMonth() + 1)
+      
+      const count = await prisma.todo.count({
+        where: {
+          createdAt: {
+            gte: date,
+            lt: nextDate
+          }
+        }
+      })
+      
+      monthlyTrend.push({
+        month: date.toLocaleDateString('zh-CN', { month: 'short' }),
+        count
+      })
+    }
 
     // 格式化数据
     const priorityStats = byPriority.reduce((acc, item) => {
@@ -71,14 +96,8 @@ export async function GET() {
       completionRate,
       byPriority: priorityStats,
       byCategory: categoryStats,
-      weeklyTrend: weeklyTrend.map(item => ({
-        date: item.createdAt.toISOString().split('T')[0],
-        count: item._count.createdAt
-      })),
-      monthlyTrend: monthlyTrend.map(item => ({
-        month: item.createdAt.toISOString().split('T')[0],
-        count: item._count.createdAt
-      }))
+      weeklyTrend,
+      monthlyTrend
     }
 
     return NextResponse.json(stats)

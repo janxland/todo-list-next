@@ -16,26 +16,30 @@ export async function GET() {
     })
 
     // 生成 CSV 内容
-    const headers = ['Title', 'Description', 'Status', 'Priority', 'Category', 'Created At']
+    const headers = ['标题', '描述', '状态', '优先级', '分类', '创建时间']
     const csvRows = [headers.join(',')]
 
     todos.forEach(todo => {
       const row = [
         `"${todo.title.replace(/"/g, '""')}"`,
         `"${(todo.description || '').replace(/"/g, '""')}"`,
-        todo.completed ? 'Completed' : 'Pending',
-        todo.priority,
-        todo.category?.name || 'Uncategorized',
-        todo.createdAt.toISOString().split('T')[0]
+        todo.completed ? '已完成' : '待完成',
+        todo.priority === 'LOW' ? '低' : todo.priority === 'MEDIUM' ? '中' : todo.priority === 'HIGH' ? '高' : '紧急',
+        `"${todo.category?.name || '未分类'}"`,
+        new Date(todo.createdAt).toLocaleString('zh-CN')
       ]
       csvRows.push(row.join(','))
     })
 
     const csvContent = csvRows.join('\n')
+    
+    // 添加 BOM 头以支持中文字符
+    const BOM = '\uFEFF'
+    const csvWithBOM = BOM + csvContent
 
-    return new NextResponse(csvContent, {
+    return new NextResponse(csvWithBOM, {
       headers: {
-        'Content-Type': 'text/csv',
+        'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="todos-${new Date().toISOString().split('T')[0]}.csv"`
       }
     })
