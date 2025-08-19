@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        serverActions: true,
-    },
+  // 移除过时的 experimental.serverActions 配置
+  // Server Actions 现在默认启用
 }
 
 module.exports = nextConfig

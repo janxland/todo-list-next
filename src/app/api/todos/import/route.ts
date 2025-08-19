@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getErrorMessage } from '@/types/prisma'
+import { Priority } from '@/types/todo'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,6 +55,12 @@ export async function POST(request: NextRequest) {
           continue
         }
 
+        // 验证优先级
+        const validPriorities = Object.values(Priority)
+        const todoPriority = validPriorities.includes(priority as Priority) 
+          ? (priority as Priority) 
+          : Priority.MEDIUM
+
         // 查找或创建分类
         let categoryId = null
         if (categoryName && categoryName !== 'Uncategorized') {
@@ -79,7 +87,7 @@ export async function POST(request: NextRequest) {
             title: title.trim(),
             description: description?.trim() || null,
             completed: status?.toLowerCase() === 'completed',
-            priority: priority || 'MEDIUM',
+            priority: todoPriority,
             categoryId,
             order: newOrder
           }
@@ -88,7 +96,8 @@ export async function POST(request: NextRequest) {
         results.success++
       } catch (error) {
         results.failed++
-        results.errors.push(`Line ${i + 2}: ${error.message}`)
+        const errorMessage = getErrorMessage(error)
+        results.errors.push(`Line ${i + 2}: ${errorMessage}`)
       }
     }
 
