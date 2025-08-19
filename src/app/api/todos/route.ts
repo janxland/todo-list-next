@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
+// 强制动态渲染，避免构建时预渲染
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -11,29 +14,29 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-    // 构建查询条件
+    // Build query conditions
     const where: any = {}
-    
+
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } }
       ]
     }
-    
+
     if (categoryId) {
       where.categoryId = categoryId
     }
-    
+
     if (priority) {
       where.priority = priority
     }
-    
+
     if (completed !== null) {
       where.completed = completed === 'true'
     }
 
-    // 保存搜索历史
+    // Save search history
     if (search && search.trim()) {
       await prisma.searchHistory.create({
         data: { query: search.trim() }
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
         [sortBy]: sortOrder
       }
     })
-    
+
     return NextResponse.json(todos)
   } catch (error) {
     console.error('Error fetching todos:', error)
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取最大排序值
+    // Get max order value
     const maxOrder = await prisma.todo.aggregate({
       _max: { order: true }
     })

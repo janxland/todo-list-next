@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = "mysql://todolist:ZWx52hMDc3wRc7RG@8.134.198.179:3306/todolist"
 }
 
 model Category {

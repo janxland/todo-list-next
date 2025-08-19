@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
+// 强制动态渲染，避免构建时预渲染
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const todos = await prisma.todo.findMany({
@@ -12,21 +15,23 @@ export async function GET() {
       }
     })
 
-    // 转换为CSV格式
-    const csvHeader = 'Title,Description,Status,Priority,Category,Created At,Updated At\n'
-    const csvRows = todos.map(todo => {
-      const title = `"${todo.title.replace(/"/g, '""')}"`
-      const description = todo.description ? `"${todo.description.replace(/"/g, '""')}"` : ''
-      const status = todo.completed ? 'Completed' : 'Pending'
-      const priority = todo.priority
-      const category = todo.category?.name || 'Uncategorized'
-      const createdAt = todo.createdAt.toISOString()
-      const updatedAt = todo.updatedAt.toISOString()
-      
-      return `${title},${description},${status},${priority},${category},${createdAt},${updatedAt}`
-    }).join('\n')
+    // 生成 CSV 内容
+    const headers = ['Title', 'Description', 'Status', 'Priority', 'Category', 'Created At']
+    const csvRows = [headers.join(',')]
 
-    const csvContent = csvHeader + csvRows
+    todos.forEach(todo => {
+      const row = [
+        `"${todo.title.replace(/"/g, '""')}"`,
+        `"${(todo.description || '').replace(/"/g, '""')}"`,
+        todo.completed ? 'Completed' : 'Pending',
+        todo.priority,
+        todo.category?.name || 'Uncategorized',
+        todo.createdAt.toISOString().split('T')[0]
+      ]
+      csvRows.push(row.join(','))
+    })
+
+    const csvContent = csvRows.join('\n')
 
     return new NextResponse(csvContent, {
       headers: {
