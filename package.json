@@ -11,7 +11,10 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "deploy": "vercel --prod",
+    "deploy:dev": "vercel",
+    "setup:vercel": "vercel link"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
